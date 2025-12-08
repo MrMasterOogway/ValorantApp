@@ -82,9 +82,23 @@ class _DraftScreenState extends State<DraftScreen> {
   Future<void> _loadData() async {
     final agents = await _api.fetchAgents();
     final maps = await _api.fetchMaps();
+
+    final filteredMaps = maps.where((m) {
+      final name = m.displayName.toLowerCase();
+      return !name.contains("scrim") &&
+            !name.contains("skirmish") &&
+            !name.contains("basic training") &&
+            !name.contains("the range") &&
+            !name.contains("range") &&
+            !name.contains("kasbah") &&
+            !name.contains("district") &&
+            !name.contains("drift") &&
+            !name.contains("piazza");
+    }).toList();
+
     setState(() {
       _agents = agents;
-      _maps = maps;
+      _maps = filteredMaps;
     });
   }
 
