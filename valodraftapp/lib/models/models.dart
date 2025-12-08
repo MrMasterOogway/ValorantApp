@@ -15,11 +15,11 @@ class ValorantAgent {
 
   factory ValorantAgent.fromJson(Map<String, dynamic> json) {
     return ValorantAgent(
-      uuid: json['uuid'] as String,
-      displayName: json['displayName'] as String,
-      role: (json['role'] != null ? json['role']['displayName'] : 'Unknown') as String,
-      iconUrl: (json['displayIcon'] ?? '') as String,
-      isPlayable: (json['isPlayableCharacter'] ?? false) as bool,
+      uuid: json['uuid'] ?? '',
+      displayName: json['displayName'] ?? '',
+      role: json['role']?['displayName'] ?? 'Unknown',
+      iconUrl: json['displayIcon'] ?? '',
+      isPlayable: json['isPlayableCharacter'] ?? false,
     );
   }
 }
@@ -39,10 +39,20 @@ class ValorantMap {
 
   factory ValorantMap.fromJson(Map<String, dynamic> json) {
     return ValorantMap(
-      uuid: json['uuid'] as String,
-      displayName: json['displayName'] as String,
-      splash: (json['splash'] ?? '') as String,
-      displayIcon: (json['displayIcon'] ?? '') as String,
+      uuid: json['uuid'] ?? '',
+      displayName: json['displayName'] ?? '',
+      splash: json['splash'] ?? '',
+      displayIcon: json['displayIcon'] ?? '',
     );
   }
+}
+
+class TeamDraft {
+  final String name;
+  final List<ValorantAgent> pickedAgents;
+
+  TeamDraft({
+    required this.name,
+    List<ValorantAgent>? pickedAgents,
+  }) : pickedAgents = pickedAgents ?? [];
 }
