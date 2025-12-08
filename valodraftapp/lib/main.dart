@@ -146,6 +146,9 @@ class _DraftScreenState extends State<DraftScreen> {
 
   void _autoActForCurrentPhase() {
     if (!mounted) return;
+
+    final currentPhase = _phase;
+
     switch (_phase) {
       case DraftPhase.mapBanTeamA:
       case DraftPhase.mapBanTeamB:
@@ -178,7 +181,13 @@ class _DraftScreenState extends State<DraftScreen> {
       case DraftPhase.done:
         break;
     }
-  }
+
+    if (!mounted) return;
+
+    if (_phase == currentPhase && _phase != DraftPhase.done) {
+      _resetTimer();
+    }
+}
 
   List<ValorantMap> _availableMapsForBan() {
     final banned = _draft.bannedMaps.map((m) => m.uuid).toSet();
@@ -296,34 +305,40 @@ class _DraftScreenState extends State<DraftScreen> {
   }
 
   void _onMapTap(ValorantMap map) {
-    if (!_isMapPhase) {
-      return;
-    }
-
-    final isTeamA = _phase == DraftPhase.mapBanTeamA;
-
-    if (isTeamA && _teamAMapBans >= 3) return;
-    if (!isTeamA && _teamBMapBans >= 3) return;
-
-    final ok = _draft.banMap(map);
-    if (!ok) return;
-
-    if (isTeamA) {
-      _teamAMapBanList.add(map);
-      _teamAMapBans++;
-      if (_teamAMapBans >= 3) _setPhase(DraftPhase.mapBanTeamB);
-    } else {
-      _teamBMapBanList.add(map);
-      _teamBMapBans++;
-    }
-
-    if (_teamAMapBans >= 3 && _teamBMapBans >= 3) {
-      _selectFinalMapFromRemaining();
-      _setPhase(DraftPhase.agentBan1TeamA);
-    }
-
-    setState(() {});
+  if (!_isMapPhase) {
+    return;
   }
+
+  final currentPhase = _phase;
+
+  final isTeamA = _phase == DraftPhase.mapBanTeamA;
+
+  if (isTeamA && _teamAMapBans >= 3) return;
+  if (!isTeamA && _teamBMapBans >= 3) return;
+
+  final ok = _draft.banMap(map);
+  if (!ok) return;
+
+  if (isTeamA) {
+    _teamAMapBanList.add(map);
+    _teamAMapBans++;
+    if (_teamAMapBans >= 3) _setPhase(DraftPhase.mapBanTeamB);
+  } else {
+    _teamBMapBanList.add(map);
+    _teamBMapBans++;
+  }
+
+  if (_teamAMapBans >= 3 && _teamBMapBans >= 3) {
+    _selectFinalMapFromRemaining();
+    _setPhase(DraftPhase.agentBan1TeamA);
+  }
+
+  setState(() {});
+
+  if (_phase == currentPhase && _phase != DraftPhase.done) {
+    _resetTimer();
+  }
+}
 
   void _onAgentTap(ValorantAgent agent) {
     if (!_isAgentPhase) return;
