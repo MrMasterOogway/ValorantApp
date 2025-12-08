@@ -5,8 +5,6 @@ class MapSection extends StatelessWidget {
   final List<ValorantMap> maps;
   final List<ValorantMap> teamAMapBans;
   final List<ValorantMap> teamBMapBans;
-  final int teamAMapBansCount;
-  final int teamBMapBansCount;
   final ValorantMap? finalSelectedMap;
   final void Function(ValorantMap) onMapTap;
 
@@ -15,8 +13,6 @@ class MapSection extends StatelessWidget {
     required this.maps,
     required this.teamAMapBans,
     required this.teamBMapBans,
-    required this.teamAMapBansCount,
-    required this.teamBMapBansCount,
     required this.finalSelectedMap,
     required this.onMapTap,
   });
@@ -53,8 +49,8 @@ class MapSection extends StatelessWidget {
                     children: [
                       const Text(
                         'Team A Bans',
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold),
+                        style:
+                            TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       _buildMapBanStrip(teamAMapBans, Colors.blueAccent),
@@ -67,8 +63,8 @@ class MapSection extends StatelessWidget {
                     children: [
                       const Text(
                         'Chosen Map',
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold),
+                        style:
+                            TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       if (finalSelectedMap == null)
@@ -104,8 +100,8 @@ class MapSection extends StatelessWidget {
                     children: [
                       const Text(
                         'Team B Bans',
-                        style: TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold),
+                        style:
+                            TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       _buildMapBanStrip(teamBMapBans, Colors.redAccent),
@@ -127,7 +123,9 @@ class MapSection extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: maps.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4, childAspectRatio: .9),
+                crossAxisCount: 4,
+                childAspectRatio: .9,
+              ),
               itemBuilder: (context, i) {
                 final m = maps[i];
                 final bannedA =

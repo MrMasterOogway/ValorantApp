@@ -7,6 +7,7 @@ import 'api/valorant_api.dart';
 import 'widgets/phase_banner.dart';
 import 'widgets/map_section.dart';
 import 'widgets/agent_section.dart';
+import 'widgets/final_summary_section.dart';
 
 void main() {
   runApp(const ValorantDraftApp());
@@ -217,6 +218,16 @@ class _DraftScreenState extends State<DraftScreen> {
   bool get _isMapPhase =>
       _phase == DraftPhase.mapBanTeamA || _phase == DraftPhase.mapBanTeamB;
 
+  bool get _isAgentPhase =>
+      _phase == DraftPhase.agentBan1TeamA ||
+      _phase == DraftPhase.agentBan1TeamB ||
+      _phase == DraftPhase.agentPick1TeamA ||
+      _phase == DraftPhase.agentPick1TeamB ||
+      _phase == DraftPhase.agentBan2TeamA ||
+      _phase == DraftPhase.agentBan2TeamB ||
+      _phase == DraftPhase.agentPick2TeamA ||
+      _phase == DraftPhase.agentPick2TeamB;
+
   bool get _isTeamATurn {
     switch (_phase) {
       case DraftPhase.mapBanTeamA:
@@ -315,7 +326,7 @@ class _DraftScreenState extends State<DraftScreen> {
   }
 
   void _onAgentTap(ValorantAgent agent) {
-    if (_isMapPhase) return;
+    if (!_isAgentPhase) return;
 
     switch (_phase) {
       case DraftPhase.agentBan1TeamA:
@@ -480,6 +491,36 @@ class _DraftScreenState extends State<DraftScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+
+          if (_phase == DraftPhase.done) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                children: [
+                  PhaseBanner(
+                    title: _phaseTitle,
+                    subtitle: _phaseSubtitle,
+                    isMapPhase: false,
+                    isBanPhase: false,
+                    isDone: true,
+                    isTeamATurn: false,
+                    secondsLeft: _secondsLeft,
+                  ),
+                  const SizedBox(height: 12),
+                  FinalSummarySection(
+                    finalMap: _finalSelectedMap,
+                    teamA: _draft.teamA,
+                    teamB: _draft.teamB,
+                    teamAMapBans: _teamAMapBanList,
+                    teamBMapBans: _teamBMapBanList,
+                    teamAAgentBans: _teamAAgentBans,
+                    teamBAgentBans: _teamBAgentBans,
+                  ),
+                ],
+              ),
+            );
+          }
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(8),
             child: Column(
@@ -489,28 +530,27 @@ class _DraftScreenState extends State<DraftScreen> {
                   subtitle: _phaseSubtitle,
                   isMapPhase: _isMapPhase,
                   isBanPhase: _isBanPhase,
-                  isDone: _phase == DraftPhase.done,
+                  isDone: false,
                   isTeamATurn: _isTeamATurn,
                   secondsLeft: _secondsLeft,
                 ),
                 const SizedBox(height: 12),
-                MapSection(
-                  maps: _maps,
-                  teamAMapBans: _teamAMapBanList,
-                  teamBMapBans: _teamBMapBanList,
-                  teamAMapBansCount: _teamAMapBans,
-                  teamBMapBansCount: _teamBMapBans,
-                  finalSelectedMap: _finalSelectedMap,
-                  onMapTap: _onMapTap,
-                ),
-                const SizedBox(height: 16),
-                AgentSection(
-                  draft: _draft,
-                  agents: _agents,
-                  teamAAgentBans: _teamAAgentBans,
-                  teamBAgentBans: _teamBAgentBans,
-                  onAgentTap: _onAgentTap,
-                ),
+                if (_isMapPhase)
+                  MapSection(
+                    maps: _maps,
+                    teamAMapBans: _teamAMapBanList,
+                    teamBMapBans: _teamBMapBanList,
+                    finalSelectedMap: _finalSelectedMap,
+                    onMapTap: _onMapTap,
+                  ),
+                if (_isAgentPhase)
+                  AgentSection(
+                    draft: _draft,
+                    agents: _agents,
+                    teamAAgentBans: _teamAAgentBans,
+                    teamBAgentBans: _teamBAgentBans,
+                    onAgentTap: _onAgentTap,
+                  ),
               ],
             ),
           );
