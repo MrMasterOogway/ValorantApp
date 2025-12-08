@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'draft_state.dart';
 import 'models/models.dart';
@@ -73,10 +75,15 @@ class _DraftScreenState extends State<DraftScreen> {
   int _teamASecondAgentPicks = 0;
   int _teamBSecondAgentPicks = 0;
 
+  Timer? _timer;
+  int _secondsLeft = 30;
+  final Random _random = Random();
+
   @override
   void initState() {
     super.initState();
     _loadFuture = _loadData();
+    _resetTimer();
   }
 
   Future<void> _loadData() async {
@@ -85,21 +92,126 @@ class _DraftScreenState extends State<DraftScreen> {
 
     final filteredMaps = maps.where((m) {
       final name = m.displayName.toLowerCase();
-      return !name.contains("scrim") &&
-            !name.contains("skirmish") &&
-            !name.contains("basic training") &&
-            !name.contains("the range") &&
-            !name.contains("range") &&
-            !name.contains("kasbah") &&
-            !name.contains("district") &&
-            !name.contains("drift") &&
-            !name.contains("piazza");
+      if (name.contains('scrim') ||
+          name.contains('skirmish') ||
+          name.contains('basic training') ||
+          name.contains('the range') ||
+          name.contains('range') ||
+          name.contains('kasbah') ||
+          name.contains('district') ||
+          name.contains('drift') ||
+          name.contains('piazza')) {
+        return false;
+      }
+      return true;
     }).toList();
 
     setState(() {
       _agents = agents;
       _maps = filteredMaps;
     });
+  }
+
+  void _resetTimer() {
+    _timer?.cancel();
+    _secondsLeft = 30;
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_secondsLeft > 0) {
+        setState(() {
+          _secondsLeft--;
+        });
+      } else {
+        timer.cancel();
+        _autoActForCurrentPhase();
+      }
+    });
+  }
+
+  void _setPhase(DraftPhase newPhase) {
+    if (_phase != newPhase) {
+      _phase = newPhase;
+      if (_phase != DraftPhase.done) {
+        _resetTimer();
+      } else {
+        _timer?.cancel();
+        _secondsLeft = 0;
+      }
+    }
+  }
+
+  void _autoActForCurrentPhase() {
+    if (!mounted) return;
+    switch (_phase) {
+      case DraftPhase.mapBanTeamA:
+      case DraftPhase.mapBanTeamB:
+        _autoBanMap();
+        break;
+      case DraftPhase.agentBan1TeamA:
+        _autoBanAgent(true, 1);
+        break;
+      case DraftPhase.agentBan1TeamB:
+        _autoBanAgent(false, 1);
+        break;
+      case DraftPhase.agentPick1TeamA:
+        _autoPickAgent(true, 1);
+        break;
+      case DraftPhase.agentPick1TeamB:
+        _autoPickAgent(false, 1);
+        break;
+      case DraftPhase.agentBan2TeamA:
+        _autoBanAgent(true, 2);
+        break;
+      case DraftPhase.agentBan2TeamB:
+        _autoBanAgent(false, 2);
+        break;
+      case DraftPhase.agentPick2TeamA:
+        _autoPickAgent(true, 2);
+        break;
+      case DraftPhase.agentPick2TeamB:
+        _autoPickAgent(false, 2);
+        break;
+      case DraftPhase.done:
+        break;
+    }
+  }
+
+  List<ValorantMap> _availableMapsForBan() {
+    final banned = _draft.bannedMaps.map((m) => m.uuid).toSet();
+    return _maps.where((m) => !banned.contains(m.uuid)).toList();
+  }
+
+  List<ValorantAgent> _availableAgentsForAction() {
+    final used = <String>{};
+    used.addAll(_draft.bannedAgents.map((a) => a.uuid));
+    used.addAll(_draft.teamA.pickedAgents.map((a) => a.uuid));
+    used.addAll(_draft.teamB.pickedAgents.map((a) => a.uuid));
+    return _agents.where((a) => !used.contains(a.uuid)).toList();
+  }
+
+  void _autoBanMap() {
+    if (!_isMapPhase) return;
+    final candidates = _availableMapsForBan();
+    if (candidates.isEmpty) return;
+    final randomMap = candidates[_random.nextInt(candidates.length)];
+    _onMapTap(randomMap);
+  }
+
+  void _autoBanAgent(bool isTeamA, int phase) {
+    final candidates = _availableAgentsForAction();
+    if (candidates.isEmpty) return;
+    final agent = candidates[_random.nextInt(candidates.length)];
+    _handleAgentBan(agent, isTeamA, phase);
+  }
+
+  void _autoPickAgent(bool isTeamA, int phase) {
+    final candidates = _availableAgentsForAction();
+    if (candidates.isEmpty) return;
+    final agent = candidates[_random.nextInt(candidates.length)];
+    _handleAgentPick(agent, isTeamA, phase);
   }
 
   bool get _isMapPhase =>
@@ -188,7 +300,7 @@ class _DraftScreenState extends State<DraftScreen> {
     if (isTeamA) {
       _teamAMapBanList.add(map);
       _teamAMapBans++;
-      if (_teamAMapBans >= 3) _phase = DraftPhase.mapBanTeamB;
+      if (_teamAMapBans >= 3) _setPhase(DraftPhase.mapBanTeamB);
     } else {
       _teamBMapBanList.add(map);
       _teamBMapBans++;
@@ -196,7 +308,7 @@ class _DraftScreenState extends State<DraftScreen> {
 
     if (_teamAMapBans >= 3 && _teamBMapBans >= 3) {
       _selectFinalMapFromRemaining();
-      _phase = DraftPhase.agentBan1TeamA;
+      _setPhase(DraftPhase.agentBan1TeamA);
     }
 
     setState(() {});
@@ -260,18 +372,18 @@ class _DraftScreenState extends State<DraftScreen> {
     if (phase == 1) {
       if (isTeamA) {
         _teamAFirstAgentBans++;
-        if (_teamAFirstAgentBans >= 3) _phase = DraftPhase.agentBan1TeamB;
+        if (_teamAFirstAgentBans >= 3) _setPhase(DraftPhase.agentBan1TeamB);
       } else {
         _teamBFirstAgentBans++;
-        if (_teamBFirstAgentBans >= 3) _phase = DraftPhase.agentPick1TeamA;
+        if (_teamBFirstAgentBans >= 3) _setPhase(DraftPhase.agentPick1TeamA);
       }
     } else {
       if (isTeamA) {
         _teamASecondAgentBans++;
-        if (_teamASecondAgentBans >= 2) _phase = DraftPhase.agentBan2TeamB;
+        if (_teamASecondAgentBans >= 2) _setPhase(DraftPhase.agentBan2TeamB);
       } else {
         _teamBSecondAgentBans++;
-        if (_teamBSecondAgentBans >= 2) _phase = DraftPhase.agentPick2TeamA;
+        if (_teamBSecondAgentBans >= 2) _setPhase(DraftPhase.agentPick2TeamA);
       }
     }
 
@@ -295,18 +407,18 @@ class _DraftScreenState extends State<DraftScreen> {
     if (phase == 1) {
       if (isTeamA) {
         _teamAFirstAgentPicks++;
-        if (_teamAFirstAgentPicks >= 3) _phase = DraftPhase.agentPick1TeamB;
+        if (_teamAFirstAgentPicks >= 3) _setPhase(DraftPhase.agentPick1TeamB);
       } else {
         _teamBFirstAgentPicks++;
-        if (_teamBFirstAgentPicks >= 3) _phase = DraftPhase.agentBan2TeamA;
+        if (_teamBFirstAgentPicks >= 3) _setPhase(DraftPhase.agentBan2TeamA);
       }
     } else {
       if (isTeamA) {
         _teamASecondAgentPicks++;
-        if (_teamASecondAgentPicks >= 2) _phase = DraftPhase.agentPick2TeamB;
+        if (_teamASecondAgentPicks >= 2) _setPhase(DraftPhase.agentPick2TeamB);
       } else {
         _teamBSecondAgentPicks++;
-        if (_teamBSecondAgentPicks >= 2) _phase = DraftPhase.done;
+        if (_teamBSecondAgentPicks >= 2) _setPhase(DraftPhase.done);
       }
     }
 
@@ -320,6 +432,12 @@ class _DraftScreenState extends State<DraftScreen> {
       remaining.shuffle();
       _finalSelectedMap = remaining.first;
     }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -351,6 +469,7 @@ class _DraftScreenState extends State<DraftScreen> {
                 _finalSelectedMap = null;
                 _loadFuture = _loadData();
               });
+              _resetTimer();
             },
           ),
         ],
@@ -372,6 +491,7 @@ class _DraftScreenState extends State<DraftScreen> {
                   isBanPhase: _isBanPhase,
                   isDone: _phase == DraftPhase.done,
                   isTeamATurn: _isTeamATurn,
+                  secondsLeft: _secondsLeft,
                 ),
                 const SizedBox(height: 12),
                 MapSection(

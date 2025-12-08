@@ -7,6 +7,7 @@ class PhaseBanner extends StatelessWidget {
   final bool isBanPhase;
   final bool isDone;
   final bool isTeamATurn;
+  final int secondsLeft;
 
   const PhaseBanner({
     super.key,
@@ -16,6 +17,7 @@ class PhaseBanner extends StatelessWidget {
     required this.isBanPhase,
     required this.isDone,
     required this.isTeamATurn,
+    required this.secondsLeft,
   });
 
   @override
@@ -71,14 +73,35 @@ class PhaseBanner extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.25),
-              borderRadius: BorderRadius.circular(99),
-            ),
-            child: Text(teamLabel, style: const TextStyle(fontSize: 12)),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(teamLabel, style: const TextStyle(fontSize: 12)),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  '${secondsLeft.toString().padLeft(2, '0')}s',
+                  style: const TextStyle(
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
