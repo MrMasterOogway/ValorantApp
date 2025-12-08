@@ -34,16 +34,13 @@ class MapSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [
-                const Icon(Icons.map),
-                const SizedBox(width: 8),
-                const Text('Map Draft',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const Spacer(),
-                Chip(label: Text('A bans: $teamAMapBansCount / 3')),
-                const SizedBox(width: 4),
-                Chip(label: Text('B bans: $teamBMapBansCount / 3')),
+              children: const [
+                Icon(Icons.map),
+                SizedBox(width: 8),
+                Text(
+                  'Map Draft',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -54,9 +51,11 @@ class MapSection extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Team A Bans',
-                          style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Team A Bans',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 4),
                       _buildMapBanStrip(teamAMapBans, Colors.blueAccent),
                     ],
@@ -66,14 +65,17 @@ class MapSection extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text('Chosen Map',
-                          style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Chosen Map',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 4),
                       if (finalSelectedMap == null)
-                        const Text('Not selected',
-                            style:
-                                TextStyle(fontSize: 11, color: Colors.grey))
+                        const Text(
+                          'Not selected',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        )
                       else
                         Column(
                           children: [
@@ -87,8 +89,10 @@ class MapSection extends StatelessWidget {
                                 ),
                               ),
                             const SizedBox(height: 4),
-                            Text(mapTitle,
-                                style: const TextStyle(fontSize: 12)),
+                            Text(
+                              mapTitle,
+                              style: const TextStyle(fontSize: 12),
+                            ),
                           ],
                         ),
                     ],
@@ -98,9 +102,11 @@ class MapSection extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text('Team B Bans',
-                          style: TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Team B Bans',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 4),
                       _buildMapBanStrip(teamBMapBans, Colors.redAccent),
                     ],
@@ -111,8 +117,10 @@ class MapSection extends StatelessWidget {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 8),
-            const Text('Maps to choose from',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const Text(
+              'Maps to choose from',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             GridView.builder(
               shrinkWrap: true,
@@ -145,14 +153,17 @@ class MapSection extends StatelessWidget {
                                       m.displayIcon.isNotEmpty
                                           ? m.displayIcon
                                           : m.splash,
-                                      fit: BoxFit.cover)
+                                      fit: BoxFit.cover,
+                                    )
                                   : const Icon(Icons.map),
                             ),
                             const SizedBox(height: 4),
-                            Text(m.displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 11)),
+                            Text(
+                              m.displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11),
+                            ),
                           ],
                         ),
                       ),
@@ -180,8 +191,10 @@ class MapSection extends StatelessWidget {
 
   Widget _buildMapBanStrip(List<ValorantMap> maps, Color tint) {
     if (maps.isEmpty) {
-      return const Text('No bans yet',
-          style: TextStyle(fontSize: 11, color: Colors.grey));
+      return const Text(
+        'No bans yet',
+        style: TextStyle(fontSize: 11, color: Colors.grey),
+      );
     }
     return Wrap(
       spacing: 4,
@@ -199,7 +212,12 @@ class MapSection extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6),
               child: img.isNotEmpty
-                  ? Image.network(img, width: 36, height: 36, fit: BoxFit.cover)
+                  ? Image.network(
+                      img,
+                      width: 36,
+                      height: 36,
+                      fit: BoxFit.cover,
+                    )
                   : Container(
                       width: 36,
                       height: 36,

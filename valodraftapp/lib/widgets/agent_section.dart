@@ -31,22 +31,10 @@ class AgentSection extends StatelessWidget {
               children: const [
                 Icon(Icons.person),
                 SizedBox(width: 8),
-                Text('Agent Draft',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              children: [
-                Chip(
-                    label: Text(
-                        'A picks: ${draft.teamA.pickedAgents.length} / 5')),
-                Chip(
-                    label: Text(
-                        'B picks: ${draft.teamB.pickedAgents.length} / 5')),
-                Chip(label: Text('Total bans: ${draft.bannedAgents.length}')),
+                Text(
+                  'Agent Draft',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -68,9 +56,8 @@ class AgentSection extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: agents.length,
               padding: const EdgeInsets.all(4),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4, childAspectRatio: .75),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4, childAspectRatio: .75),
               itemBuilder: (context, i) {
                 final a = agents[i];
 
@@ -94,15 +81,19 @@ class AgentSection extends StatelessWidget {
                           children: [
                             Expanded(
                               child: a.iconUrl.isNotEmpty
-                                  ? Image.network(a.iconUrl,
-                                      fit: BoxFit.contain)
+                                  ? Image.network(
+                                      a.iconUrl,
+                                      fit: BoxFit.contain,
+                                    )
                                   : const Icon(Icons.person),
                             ),
                             const SizedBox(height: 4),
-                            Text(a.displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 11)),
+                            Text(
+                              a.displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11),
+                            ),
                           ],
                         ),
                       ),
@@ -155,28 +146,36 @@ class _TeamAgentsColumn extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(team.name,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(
+              team.name,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             const SizedBox(height: 4),
             if (team.pickedAgents.isEmpty)
-              const Text('No picks yet.',
-                  style: TextStyle(fontSize: 11, color: Colors.grey)),
+              const Text(
+                'No picks yet.',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
             if (team.pickedAgents.isNotEmpty)
               Wrap(
                 spacing: 4,
                 runSpacing: 4,
                 children: team.pickedAgents
-                    .map((a) => Chip(
-                          avatar: a.iconUrl.isNotEmpty
-                              ? CircleAvatar(
-                                  backgroundImage:
-                                      NetworkImage(a.iconUrl))
-                              : const CircleAvatar(
-                                  child: Icon(Icons.person, size: 14)),
-                          label: Text(a.displayName,
-                              style: const TextStyle(fontSize: 11)),
-                        ))
+                    .map(
+                      (a) => Chip(
+                        avatar: a.iconUrl.isNotEmpty
+                            ? CircleAvatar(
+                                backgroundImage: NetworkImage(a.iconUrl),
+                              )
+                            : const CircleAvatar(
+                                child: Icon(Icons.person, size: 14),
+                              ),
+                        label: Text(
+                          a.displayName,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ),
+                    )
                     .toList(),
               ),
           ],
@@ -201,15 +200,19 @@ class _BannedAgentsRow extends StatelessWidget {
         teamAAgentBans.isNotEmpty || teamBAgentBans.isNotEmpty;
 
     if (!hasBans) {
-      return const Text('Banned agents: none yet.',
-          style: TextStyle(fontSize: 11, color: Colors.grey));
+      return const Text(
+        'Banned agents: none yet.',
+        style: TextStyle(fontSize: 11, color: Colors.grey),
+      );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Banned Agents by Team',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        const Text(
+          'Banned Agents by Team',
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 4),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,31 +221,37 @@ class _BannedAgentsRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Team A',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueAccent)),
+                  const Text(
+                    'Team A',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent),
+                  ),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 4,
                     runSpacing: 4,
                     children: teamAAgentBans
-                        .map((a) => Chip(
-                              shape: StadiumBorder(
-                                side: BorderSide(
-                                    color: Colors.blueAccent.withOpacity(.7)),
-                              ),
-                              avatar: a.iconUrl.isNotEmpty
-                                  ? CircleAvatar(
-                                      backgroundImage:
-                                          NetworkImage(a.iconUrl))
-                                  : const CircleAvatar(
-                                      child:
-                                          Icon(Icons.person, size: 14)),
-                              label: Text(a.displayName,
-                                  style: const TextStyle(fontSize: 11)),
-                            ))
+                        .map(
+                          (a) => Chip(
+                            shape: StadiumBorder(
+                              side: BorderSide(
+                                  color: Colors.blueAccent.withOpacity(.7)),
+                            ),
+                            avatar: a.iconUrl.isNotEmpty
+                                ? CircleAvatar(
+                                    backgroundImage: NetworkImage(a.iconUrl),
+                                  )
+                                : const CircleAvatar(
+                                    child: Icon(Icons.person, size: 14),
+                                  ),
+                            label: Text(
+                              a.displayName,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                 ],
@@ -252,31 +261,37 @@ class _BannedAgentsRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Team B',
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.redAccent)),
+                  const Text(
+                    'Team B',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.redAccent),
+                  ),
                   const SizedBox(height: 4),
                   Wrap(
                     spacing: 4,
                     runSpacing: 4,
                     children: teamBAgentBans
-                        .map((a) => Chip(
-                              shape: StadiumBorder(
-                                side: BorderSide(
-                                    color: Colors.redAccent.withOpacity(.7)),
-                              ),
-                              avatar: a.iconUrl.isNotEmpty
-                                  ? CircleAvatar(
-                                      backgroundImage:
-                                          NetworkImage(a.iconUrl))
-                                  : const CircleAvatar(
-                                      child:
-                                          Icon(Icons.person, size: 14)),
-                              label: Text(a.displayName,
-                                  style: const TextStyle(fontSize: 11)),
-                            ))
+                        .map(
+                          (a) => Chip(
+                            shape: StadiumBorder(
+                              side: BorderSide(
+                                  color: Colors.redAccent.withOpacity(.7)),
+                            ),
+                            avatar: a.iconUrl.isNotEmpty
+                                ? CircleAvatar(
+                                    backgroundImage: NetworkImage(a.iconUrl),
+                                  )
+                                : const CircleAvatar(
+                                    child: Icon(Icons.person, size: 14),
+                                  ),
+                            label: Text(
+                              a.displayName,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                 ],
