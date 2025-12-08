@@ -52,6 +52,8 @@ class _DraftScreenState extends State<DraftScreen> {
   int _teamAMapBans = 0;
   int _teamBMapBans = 0;
   ValorantMap? _finalSelectedMap;
+  final List<ValorantMap> _teamAMapBanList = [];
+  final List<ValorantMap> _teamBMapBanList = [];
   int _teamAFirstAgentBans = 0;
   int _teamBFirstAgentBans = 0;
   int _teamAFirstAgentPicks = 0;
@@ -153,45 +155,51 @@ class _DraftScreenState extends State<DraftScreen> {
   }
 
   void _onMapTap(ValorantMap map) {
-    if (!_isMapPhase) {
-      _showSnack('Map phase is finished. Final map: '
-          '${_finalSelectedMap?.displayName ?? 'N/A'}.');
-      return;
-    }
-
-    final bool isTeamA = _phase == DraftPhase.mapBanTeamA;
-
-    if (isTeamA && _teamAMapBans >= 3) {
-      _showSnack('Team A has already banned 3 maps.');
-      return;
-    }
-    if (!isTeamA && _teamBMapBans >= 3) {
-      _showSnack('Team B has already banned 3 maps.');
-      return;
-    }
-
-    final ok = _draft.banMap(map);
-    if (!ok) {
-      _showSnack('Cannot ban this map (already banned).');
-      return;
-    }
-
-    if (isTeamA) {
-      _teamAMapBans++;
-      if (_teamAMapBans >= 3) {
-        _phase = DraftPhase.mapBanTeamB;
-      }
-    } else {
-      _teamBMapBans++;
-    }
-
-    if (_teamAMapBans >= 3 && _teamBMapBans >= 3) {
-      _selectFinalMapFromRemaining();
-      _phase = DraftPhase.agentBan1TeamA;
-    }
-
-    setState(() {});
+  if (!_isMapPhase) {
+    _showSnack('Map phase is finished. Final map: '
+        '${_finalSelectedMap?.displayName ?? 'N/A'}.');
+    return;
   }
+
+  final bool isTeamA = _phase == DraftPhase.mapBanTeamA;
+
+  if (isTeamA && _teamAMapBans >= 3) {
+    _showSnack('Team A has already banned 3 maps.');
+    return;
+  }
+  if (!isTeamA && _teamBMapBans >= 3) {
+    _showSnack('Team B has already banned 3 maps.');
+    return;
+  }
+
+  final ok = _draft.banMap(map);
+  if (!ok) {
+    _showSnack('Cannot ban this map (already banned).');
+    return;
+  }
+
+  if (isTeamA) {
+    _teamAMapBanList.add(map);
+  } else {
+    _teamBMapBanList.add(map);
+  }
+
+  if (isTeamA) {
+    _teamAMapBans++;
+    if (_teamAMapBans >= 3) {
+      _phase = DraftPhase.mapBanTeamB;
+    }
+  } else {
+    _teamBMapBans++;
+  }
+
+  if (_teamAMapBans >= 3 && _teamBMapBans >= 3) {
+    _selectFinalMapFromRemaining();
+    _phase = DraftPhase.agentBan1TeamA;
+  }
+
+  setState(() {});
+}
 
   void _onAgentTap(ValorantAgent agent) {
     if (_isMapPhase) {
@@ -383,6 +391,8 @@ class _DraftScreenState extends State<DraftScreen> {
                 _teamAMapBans = 0;
                 _teamBMapBans = 0;
                 _finalSelectedMap = null;
+                _teamAMapBanList.clear();
+                _teamBMapBanList.clear();
                 _teamAFirstAgentBans = 0;
                 _teamBFirstAgentBans = 0;
                 _teamAFirstAgentPicks = 0;
