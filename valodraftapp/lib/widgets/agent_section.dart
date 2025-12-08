@@ -74,52 +74,58 @@ class AgentSection extends StatelessWidget {
 
                 return GestureDetector(
                   onTap: () => onAgentTap(a),
-                  child: Stack(
-                    children: [
-                      Card(
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: a.iconUrl.isNotEmpty
-                                  ? Image.network(
-                                      a.iconUrl,
-                                      fit: BoxFit.contain,
-                                    )
-                                  : const Icon(Icons.person),
+                  child: AnimatedScale(
+                    scale: used ? 0.95 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: AnimatedOpacity(
+                      opacity: used ? 0.6 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Stack(
+                        children: [
+                          Card(
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: a.iconUrl.isNotEmpty
+                                      ? Image.network(
+                                          a.iconUrl,
+                                          fit: BoxFit.contain,
+                                        )
+                                      : const Icon(Icons.person),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  a.displayName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              a.displayName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 11),
+                          ),
+                          if (used)
+                            Container(
+                              decoration: BoxDecoration(
+                                color: bannedA
+                                    ? Colors.blue.withOpacity(.55)
+                                    : bannedB
+                                        ? Colors.red.withOpacity(.55)
+                                        : Colors.black.withOpacity(.55),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  bannedA || bannedB ? Icons.block : Icons.check,
+                                  color: bannedA || bannedB
+                                      ? Colors.white
+                                      : Colors.greenAccent,
+                                  size: 24,
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
-                      if (used)
-                        Container(
-                          decoration: BoxDecoration(
-                            color: bannedA
-                                ? Colors.blue.withOpacity(.55)
-                                : bannedB
-                                    ? Colors.red.withOpacity(.55)
-                                    : Colors.black.withOpacity(.55),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              bannedA || bannedB
-                                  ? Icons.block
-                                  : Icons.check,
-                              color: bannedA || bannedB
-                                  ? Colors.white
-                                  : Colors.greenAccent,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                    ],
+                    ),
                   ),
                 );
               },
