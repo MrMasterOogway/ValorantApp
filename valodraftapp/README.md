@@ -1,16 +1,40 @@
-# valodraftapp
+# VALORANT Draft App (Flutter)
 
-A new Flutter project.
+This is a small Flutter app that acts like a draft / ban phase tool for VALORANT:
 
-## Getting Started
+- Uses https://valorant-api.com/v1/agents and https://valorant-api.com/v1/maps
+- Lets you globally **ban agents** and **maps**
+- Lets you **pick agents and maps for Team A and Team B**
+- Enforces:
+  - Max 5 agent bans
+  - Max 5 agent picks per team
+  - Max 3 map bans
+  - Max 3 map picks per team
 
-This project is a starting point for a Flutter application.
+## How to use
 
-A few resources to get you started if this is your first Flutter project:
+1. Make sure you have Flutter installed.
+2. Create a new empty folder on your machine.
+3. Copy the contents of this ZIP into that folder.
+4. In a terminal, `cd` into the folder and run:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter pub get
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+If you prefer, you can also do:
+
+```bash
+flutter create .
+# (this will generate android/ios/web folders if they don't exist)
+flutter pub get
+flutter run
+```
+
+The main files are:
+
+- `lib/main.dart` – UI & screens
+- `lib/draft_state.dart` – draft logic (Team A / Team B)
+- `lib/models.dart` – agent & map models
+- `lib/valorant_api.dart` – simple API client
