@@ -374,82 +374,93 @@ class _DraftScreenState extends State<DraftScreen> {
   }
 
   void _handleAgentBan(ValorantAgent agent, bool isTeamA, int phase) {
-    if (phase == 1) {
-      if (isTeamA && _teamAFirstAgentBans >= 3) return;
-      if (!isTeamA && _teamBFirstAgentBans >= 3) return;
-    } else {
-      if (isTeamA && _teamASecondAgentBans >= 2) return;
-      if (!isTeamA && _teamBSecondAgentBans >= 2) return;
-    }
+  final currentPhase = _phase;
 
-    final ok = _draft.banAgent(agent);
-    if (!ok) return;
-
-    if (isTeamA) {
-      if (!_teamAAgentBans.any((a) => a.uuid == agent.uuid)) {
-        _teamAAgentBans.add(agent);
-      }
-    } else {
-      if (!_teamBAgentBans.any((a) => a.uuid == agent.uuid)) {
-        _teamBAgentBans.add(agent);
-      }
-    }
-
-    if (phase == 1) {
-      if (isTeamA) {
-        _teamAFirstAgentBans++;
-        if (_teamAFirstAgentBans >= 3) _setPhase(DraftPhase.agentBan1TeamB);
-      } else {
-        _teamBFirstAgentBans++;
-        if (_teamBFirstAgentBans >= 3) _setPhase(DraftPhase.agentPick1TeamA);
-      }
-    } else {
-      if (isTeamA) {
-        _teamASecondAgentBans++;
-        if (_teamASecondAgentBans >= 2) _setPhase(DraftPhase.agentBan2TeamB);
-      } else {
-        _teamBSecondAgentBans++;
-        if (_teamBSecondAgentBans >= 2) _setPhase(DraftPhase.agentPick2TeamA);
-      }
-    }
-
-    setState(() {});
+  if (phase == 1) {
+    if (isTeamA && _teamAFirstAgentBans >= 3) return;
+    if (!isTeamA && _teamBFirstAgentBans >= 3) return;
+  } else {
+    if (isTeamA && _teamASecondAgentBans >= 2) return;
+    if (!isTeamA && _teamBSecondAgentBans >= 2) return;
   }
+
+  final ok = _draft.banAgent(agent);
+  if (!ok) return;
+
+  if (isTeamA) {
+    if (!_teamAAgentBans.any((a) => a.uuid == agent.uuid)) {
+      _teamAAgentBans.add(agent);
+    }
+  } else {
+    if (!_teamBAgentBans.any((a) => a.uuid == agent.uuid)) {
+      _teamBAgentBans.add(agent);
+    }
+  }
+
+  if (phase == 1) {
+    if (isTeamA) {
+      _teamAFirstAgentBans++;
+      if (_teamAFirstAgentBans >= 3) _setPhase(DraftPhase.agentBan1TeamB);
+    } else {
+      _teamBFirstAgentBans++;
+      if (_teamBFirstAgentBans >= 3) _setPhase(DraftPhase.agentPick1TeamA);
+    }
+  } else {
+    if (isTeamA) {
+      _teamASecondAgentBans++;
+      if (_teamASecondAgentBans >= 2) _setPhase(DraftPhase.agentBan2TeamB);
+    } else {
+      _teamBSecondAgentBans++;
+      if (_teamBSecondAgentBans >= 2) _setPhase(DraftPhase.agentPick2TeamA);
+    }
+  }
+
+  setState(() {});
+
+  if (_phase == currentPhase && _phase != DraftPhase.done) {
+    _resetTimer();
+  }
+}
 
   void _handleAgentPick(ValorantAgent agent, bool isTeamA, int phase) {
-    final team = isTeamA ? _draft.teamA : _draft.teamB;
+  final currentPhase = _phase;
+  final team = isTeamA ? _draft.teamA : _draft.teamB;
 
-    if (phase == 1) {
-      if (isTeamA && _teamAFirstAgentPicks >= 3) return;
-      if (!isTeamA && _teamBFirstAgentPicks >= 3) return;
-    } else {
-      if (isTeamA && _teamASecondAgentPicks >= 2) return;
-      if (!isTeamA && _teamBSecondAgentPicks >= 2) return;
-    }
-
-    final ok = _draft.pickAgent(agent, team);
-    if (!ok) return;
-
-    if (phase == 1) {
-      if (isTeamA) {
-        _teamAFirstAgentPicks++;
-        if (_teamAFirstAgentPicks >= 3) _setPhase(DraftPhase.agentPick1TeamB);
-      } else {
-        _teamBFirstAgentPicks++;
-        if (_teamBFirstAgentPicks >= 3) _setPhase(DraftPhase.agentBan2TeamA);
-      }
-    } else {
-      if (isTeamA) {
-        _teamASecondAgentPicks++;
-        if (_teamASecondAgentPicks >= 2) _setPhase(DraftPhase.agentPick2TeamB);
-      } else {
-        _teamBSecondAgentPicks++;
-        if (_teamBSecondAgentPicks >= 2) _setPhase(DraftPhase.done);
-      }
-    }
-
-    setState(() {});
+  if (phase == 1) {
+    if (isTeamA && _teamAFirstAgentPicks >= 3) return;
+    if (!isTeamA && _teamBFirstAgentPicks >= 3) return;
+  } else {
+    if (isTeamA && _teamASecondAgentPicks >= 2) return;
+    if (!isTeamA && _teamBSecondAgentPicks >= 2) return;
   }
+
+  final ok = _draft.pickAgent(agent, team);
+  if (!ok) return;
+
+  if (phase == 1) {
+    if (isTeamA) {
+      _teamAFirstAgentPicks++;
+      if (_teamAFirstAgentPicks >= 3) _setPhase(DraftPhase.agentPick1TeamB);
+    } else {
+      _teamBFirstAgentPicks++;
+      if (_teamBFirstAgentPicks >= 3) _setPhase(DraftPhase.agentBan2TeamA);
+    }
+  } else {
+    if (isTeamA) {
+      _teamASecondAgentPicks++;
+      if (_teamASecondAgentPicks >= 2) _setPhase(DraftPhase.agentPick2TeamB);
+    } else {
+      _teamBSecondAgentPicks++;
+      if (_teamBSecondAgentPicks >= 2) _setPhase(DraftPhase.done);
+    }
+  }
+
+  setState(() {});
+
+  if (_phase == currentPhase && _phase != DraftPhase.done) {
+    _resetTimer();
+  }
+}
 
   void _selectFinalMapFromRemaining() {
     final bannedIds = _draft.bannedMaps.map((m) => m.uuid).toSet();
