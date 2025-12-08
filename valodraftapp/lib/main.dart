@@ -80,6 +80,41 @@ class _DraftScreenState extends State<DraftScreen> {
   int _secondsLeft = 30;
   final Random _random = Random();
 
+  Widget _buildPhaseContent() {
+    if (_phase == DraftPhase.done) {
+      return FinalSummarySection(
+        key: const ValueKey('final'),
+        finalMap: _finalSelectedMap,
+        teamA: _draft.teamA,
+        teamB: _draft.teamB,
+        teamAMapBans: _teamAMapBanList,
+        teamBMapBans: _teamBMapBanList,
+        teamAAgentBans: _teamAAgentBans,
+        teamBAgentBans: _teamBAgentBans,
+      );
+    }
+
+    if (_isMapPhase) {
+      return MapSection(
+        key: const ValueKey('map'),
+        maps: _maps,
+        teamAMapBans: _teamAMapBanList,
+        teamBMapBans: _teamBMapBanList,
+        finalSelectedMap: _finalSelectedMap,
+        onMapTap: _onMapTap,
+      );
+    }
+
+      return AgentSection(
+        key: const ValueKey('agents'),
+        draft: _draft,
+        agents: _agents,
+        teamAAgentBans: _teamAAgentBans,
+        teamBAgentBans: _teamBAgentBans,
+        onAgentTap: _onAgentTap,
+      );
+    }
+
   @override
   void initState() {
     super.initState();
@@ -526,21 +561,28 @@ class _DraftScreenState extends State<DraftScreen> {
                   PhaseBanner(
                     title: _phaseTitle,
                     subtitle: _phaseSubtitle,
-                    isMapPhase: false,
-                    isBanPhase: false,
-                    isDone: true,
-                    isTeamATurn: false,
+                    isMapPhase: _isMapPhase,
+                    isBanPhase: _isBanPhase,
+                    isDone: _phase == DraftPhase.done,
+                    isTeamATurn: _isTeamATurn,
                     secondsLeft: _secondsLeft,
                   ),
                   const SizedBox(height: 12),
-                  FinalSummarySection(
-                    finalMap: _finalSelectedMap,
-                    teamA: _draft.teamA,
-                    teamB: _draft.teamB,
-                    teamAMapBans: _teamAMapBanList,
-                    teamBMapBans: _teamBMapBanList,
-                    teamAAgentBans: _teamAAgentBans,
-                    teamBAgentBans: _teamBAgentBans,
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 350),
+                    transitionBuilder: (child, animation) {
+                      return SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0.0, 0.1),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: _buildPhaseContent(),
                   ),
                 ],
               ),
