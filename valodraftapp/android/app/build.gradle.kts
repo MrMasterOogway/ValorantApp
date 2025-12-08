@@ -51,7 +51,6 @@ android {
             signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
-            // existing settings are okay here
         }
     }
 }

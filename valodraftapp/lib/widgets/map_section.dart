@@ -134,49 +134,57 @@ class MapSection extends StatelessWidget {
                     teamBMapBans.any((x) => x.uuid == m.uuid);
                 final selected =
                     finalSelectedMap != null && finalSelectedMap!.uuid == m.uuid;
-
+                final isUsed = selected || bannedA || bannedB;
                 return GestureDetector(
                   onTap: () => onMapTap(m),
-                  child: Stack(
-                    children: [
-                      Card(
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: (m.displayIcon.isNotEmpty
-                                      ? m.displayIcon
-                                      : m.splash)
-                                  .isNotEmpty
-                                  ? Image.network(
-                                      m.displayIcon.isNotEmpty
+                  child: AnimatedScale(
+                    scale: isUsed ? 0.95 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: AnimatedOpacity(
+                      opacity: isUsed ? 0.7 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Stack(
+                        children: [
+                          Card(
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: (m.displayIcon.isNotEmpty
                                           ? m.displayIcon
-                                          : m.splash,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : const Icon(Icons.map),
+                                          : m.splash)
+                                      .isNotEmpty
+                                      ? Image.network(
+                                          m.displayIcon.isNotEmpty
+                                              ? m.displayIcon
+                                              : m.splash,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : const Icon(Icons.map),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  m.displayName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              m.displayName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 11),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (selected || bannedA || bannedB)
-                        Container(
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? Colors.amber.withOpacity(0.45)
-                                : bannedA
-                                    ? Colors.blue.withOpacity(0.45)
-                                    : Colors.red.withOpacity(0.45),
-                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ),
-                    ],
+                          if (selected || bannedA || bannedB)
+                            Container(
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? Colors.amber.withOpacity(0.45)
+                                    : bannedA
+                                        ? Colors.blue.withOpacity(0.45)
+                                        : Colors.red.withOpacity(0.45),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               },
