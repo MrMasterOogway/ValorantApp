@@ -15,10 +15,10 @@ class DraftState {
   final List<ValorantAgent> bannedAgents = [];
   final List<ValorantMap> bannedMaps = [];
 
-  static const int maxAgentBans = 5;
+  static const int maxAgentBans = 10;
   static const int maxAgentPicksPerTeam = 5;
-  static const int maxMapBans = 3;
-  static const int maxMapPicksPerTeam = 3;
+  static const int maxMapBans = 6;
+  static const int maxMapPicksPerTeam = 0;
 
   bool banAgent(ValorantAgent agent) {
     if (bannedAgents.length >= maxAgentBans) return false;
@@ -49,6 +49,7 @@ class DraftState {
   }
 
   bool pickMap(ValorantMap map, TeamDraft team) {
+    if (maxMapPicksPerTeam <= 0) return false;
     if (_isMapGloballyUsed(map)) return false;
 
     if (team == teamA) {
