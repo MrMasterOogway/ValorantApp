@@ -45,15 +45,22 @@ class DraftScreen extends StatefulWidget {
 class _DraftScreenState extends State<DraftScreen> {
   final _api = ValorantApi();
   final _draft = DraftState();
+
   late Future<void> _loadFuture;
   List<ValorantAgent> _agents = [];
   List<ValorantMap> _maps = [];
+
   DraftPhase _phase = DraftPhase.mapBanTeamA;
+
+  final List<ValorantMap> _teamAMapBanList = [];
+  final List<ValorantMap> _teamBMapBanList = [];
   int _teamAMapBans = 0;
   int _teamBMapBans = 0;
   ValorantMap? _finalSelectedMap;
-  final List<ValorantMap> _teamAMapBanList = [];
-  final List<ValorantMap> _teamBMapBanList = [];
+
+  final List<ValorantAgent> _teamAAgentBans = [];
+  final List<ValorantAgent> _teamBAgentBans = [];
+
   int _teamAFirstAgentBans = 0;
   int _teamBFirstAgentBans = 0;
   int _teamAFirstAgentPicks = 0;
@@ -89,12 +96,7 @@ class _DraftScreenState extends State<DraftScreen> {
       case DraftPhase.agentBan2TeamA:
       case DraftPhase.agentPick2TeamA:
         return true;
-      case DraftPhase.mapBanTeamB:
-      case DraftPhase.agentBan1TeamB:
-      case DraftPhase.agentPick1TeamB:
-      case DraftPhase.agentBan2TeamB:
-      case DraftPhase.agentPick2TeamB:
-      case DraftPhase.done:
+      default:
         return false;
     }
   }
@@ -122,236 +124,165 @@ class _DraftScreenState extends State<DraftScreen> {
   String get _phaseSubtitle {
     if (_phase == DraftPhase.done) {
       final mapName = _finalSelectedMap?.displayName ?? 'No map selected';
-      return 'Draft is complete. Final map: $mapName';
+      return 'Draft Finished • Map: $mapName';
     }
-
-    final teamLabel = _isTeamATurn ? 'Team A' : 'Team B';
-
+    final t = _isTeamATurn ? 'Team A' : 'Team B';
     switch (_phase) {
       case DraftPhase.mapBanTeamA:
-        return '$teamLabel: Tap 3 maps to ban.';
       case DraftPhase.mapBanTeamB:
-        return '$teamLabel: Tap 3 maps to ban.';
-
+        return '$t: Ban 3 maps';
       case DraftPhase.agentBan1TeamA:
       case DraftPhase.agentBan1TeamB:
-        return '$teamLabel: Ban 3 agents. (First ban phase)';
-
+        return '$t: Ban 3 agents';
       case DraftPhase.agentPick1TeamA:
       case DraftPhase.agentPick1TeamB:
-        return '$teamLabel: Pick 3 agents. (First pick phase)';
-
+        return '$t: Pick 3 agents';
       case DraftPhase.agentBan2TeamA:
       case DraftPhase.agentBan2TeamB:
-        return '$teamLabel: Ban 2 agents. (Second ban phase)';
-
+        return '$t: Ban 2 agents';
       case DraftPhase.agentPick2TeamA:
       case DraftPhase.agentPick2TeamB:
-        return '$teamLabel: Pick 2 agents. (Second pick phase)';
-
-      case DraftPhase.done:
+        return '$t: Pick 2 agents';
+      default:
         return '';
     }
   }
 
   void _onMapTap(ValorantMap map) {
-  if (!_isMapPhase) {
-    _showSnack('Map phase is finished. Final map: '
-        '${_finalSelectedMap?.displayName ?? 'N/A'}.');
-    return;
-  }
-
-  final bool isTeamA = _phase == DraftPhase.mapBanTeamA;
-
-  if (isTeamA && _teamAMapBans >= 3) {
-    _showSnack('Team A has already banned 3 maps.');
-    return;
-  }
-  if (!isTeamA && _teamBMapBans >= 3) {
-    _showSnack('Team B has already banned 3 maps.');
-    return;
-  }
-
-  final ok = _draft.banMap(map);
-  if (!ok) {
-    _showSnack('Cannot ban this map (already banned).');
-    return;
-  }
-
-  if (isTeamA) {
-    _teamAMapBanList.add(map);
-  } else {
-    _teamBMapBanList.add(map);
-  }
-
-  if (isTeamA) {
-    _teamAMapBans++;
-    if (_teamAMapBans >= 3) {
-      _phase = DraftPhase.mapBanTeamB;
-    }
-  } else {
-    _teamBMapBans++;
-  }
-
-  if (_teamAMapBans >= 3 && _teamBMapBans >= 3) {
-    _selectFinalMapFromRemaining();
-    _phase = DraftPhase.agentBan1TeamA;
-  }
-
-  setState(() {});
-}
-
-  void _onAgentTap(ValorantAgent agent) {
-    if (_isMapPhase) {
-      _showSnack('Finish map bans first (top section).');
+    if (!_isMapPhase) {
       return;
     }
+
+    final isTeamA = _phase == DraftPhase.mapBanTeamA;
+
+    if (isTeamA && _teamAMapBans >= 3) return;
+    if (!isTeamA && _teamBMapBans >= 3) return;
+
+    final ok = _draft.banMap(map);
+    if (!ok) return;
+
+    if (isTeamA) {
+      _teamAMapBanList.add(map);
+      _teamAMapBans++;
+      if (_teamAMapBans >= 3) _phase = DraftPhase.mapBanTeamB;
+    } else {
+      _teamBMapBanList.add(map);
+      _teamBMapBans++;
+    }
+
+    if (_teamAMapBans >= 3 && _teamBMapBans >= 3) {
+      _selectFinalMapFromRemaining();
+      _phase = DraftPhase.agentBan1TeamA;
+    }
+
+    setState(() {});
+  }
+
+  void _onAgentTap(ValorantAgent agent) {
+    if (_isMapPhase) return;
 
     switch (_phase) {
       case DraftPhase.agentBan1TeamA:
-        _handleAgentBan(agent, isTeamA: true, phase: 1);
+        _handleAgentBan(agent, true, 1);
         break;
       case DraftPhase.agentBan1TeamB:
-        _handleAgentBan(agent, isTeamA: false, phase: 1);
+        _handleAgentBan(agent, false, 1);
         break;
       case DraftPhase.agentPick1TeamA:
-        _handleAgentPick(agent, isTeamA: true, phase: 1);
+        _handleAgentPick(agent, true, 1);
         break;
       case DraftPhase.agentPick1TeamB:
-        _handleAgentPick(agent, isTeamA: false, phase: 1);
+        _handleAgentPick(agent, false, 1);
         break;
       case DraftPhase.agentBan2TeamA:
-        _handleAgentBan(agent, isTeamA: true, phase: 2);
+        _handleAgentBan(agent, true, 2);
         break;
       case DraftPhase.agentBan2TeamB:
-        _handleAgentBan(agent, isTeamA: false, phase: 2);
+        _handleAgentBan(agent, false, 2);
         break;
       case DraftPhase.agentPick2TeamA:
-        _handleAgentPick(agent, isTeamA: true, phase: 2);
+        _handleAgentPick(agent, true, 2);
         break;
       case DraftPhase.agentPick2TeamB:
-        _handleAgentPick(agent, isTeamA: false, phase: 2);
+        _handleAgentPick(agent, false, 2);
         break;
-      case DraftPhase.mapBanTeamA:
-      case DraftPhase.mapBanTeamB:
-        _showSnack('You are still in map ban phase.');
-        break;
-      case DraftPhase.done:
-        _showSnack('Draft is complete.');
+      default:
         break;
     }
   }
 
-  void _handleAgentBan(ValorantAgent agent,
-      {required bool isTeamA, required int phase}) {
+  void _handleAgentBan(ValorantAgent agent, bool isTeamA, int phase) {
     if (phase == 1) {
-      if (isTeamA && _teamAFirstAgentBans >= 3) {
-        _showSnack('Team A has already banned 3 agents.');
-        return;
-      }
-      if (!isTeamA && _teamBFirstAgentBans >= 3) {
-        _showSnack('Team B has already banned 3 agents.');
-        return;
-      }
+      if (isTeamA && _teamAFirstAgentBans >= 3) return;
+      if (!isTeamA && _teamBFirstAgentBans >= 3) return;
     } else {
-      if (isTeamA && _teamASecondAgentBans >= 2) {
-        _showSnack('Team A has already banned 2 agents (second phase).');
-        return;
-      }
-      if (!isTeamA && _teamBSecondAgentBans >= 2) {
-        _showSnack('Team B has already banned 2 agents (second phase).');
-        return;
-      }
+      if (isTeamA && _teamASecondAgentBans >= 2) return;
+      if (!isTeamA && _teamBSecondAgentBans >= 2) return;
     }
 
     final ok = _draft.banAgent(agent);
-    if (!ok) {
-      _showSnack('Cannot ban this agent (already banned or picked).');
-      return;
+    if (!ok) return;
+
+    if (isTeamA) {
+      if (!_teamAAgentBans.any((a) => a.uuid == agent.uuid)) {
+        _teamAAgentBans.add(agent);
+      }
+    } else {
+      if (!_teamBAgentBans.any((a) => a.uuid == agent.uuid)) {
+        _teamBAgentBans.add(agent);
+      }
     }
 
     if (phase == 1) {
       if (isTeamA) {
         _teamAFirstAgentBans++;
-        if (_teamAFirstAgentBans >= 3) {
-          _phase = DraftPhase.agentBan1TeamB;
-        }
+        if (_teamAFirstAgentBans >= 3) _phase = DraftPhase.agentBan1TeamB;
       } else {
         _teamBFirstAgentBans++;
-        if (_teamBFirstAgentBans >= 3) {
-          _phase = DraftPhase.agentPick1TeamA;
-        }
+        if (_teamBFirstAgentBans >= 3) _phase = DraftPhase.agentPick1TeamA;
       }
     } else {
       if (isTeamA) {
         _teamASecondAgentBans++;
-        if (_teamASecondAgentBans >= 2) {
-          _phase = DraftPhase.agentBan2TeamB;
-        }
+        if (_teamASecondAgentBans >= 2) _phase = DraftPhase.agentBan2TeamB;
       } else {
         _teamBSecondAgentBans++;
-        if (_teamBSecondAgentBans >= 2) {
-          _phase = DraftPhase.agentPick2TeamA;
-        }
+        if (_teamBSecondAgentBans >= 2) _phase = DraftPhase.agentPick2TeamA;
       }
     }
 
     setState(() {});
   }
 
-  void _handleAgentPick(ValorantAgent agent,
-      {required bool isTeamA, required int phase}) {
+  void _handleAgentPick(ValorantAgent agent, bool isTeamA, int phase) {
     final team = isTeamA ? _draft.teamA : _draft.teamB;
 
     if (phase == 1) {
-      if (isTeamA && _teamAFirstAgentPicks >= 3) {
-        _showSnack('Team A has already picked 3 agents.');
-        return;
-      }
-      if (!isTeamA && _teamBFirstAgentPicks >= 3) {
-        _showSnack('Team B has already picked 3 agents.');
-        return;
-      }
+      if (isTeamA && _teamAFirstAgentPicks >= 3) return;
+      if (!isTeamA && _teamBFirstAgentPicks >= 3) return;
     } else {
-      if (isTeamA && _teamASecondAgentPicks >= 2) {
-        _showSnack('Team A has already picked 2 agents (second phase).');
-        return;
-      }
-      if (!isTeamA && _teamBSecondAgentPicks >= 2) {
-        _showSnack('Team B has already picked 2 agents (second phase).');
-        return;
-      }
+      if (isTeamA && _teamASecondAgentPicks >= 2) return;
+      if (!isTeamA && _teamBSecondAgentPicks >= 2) return;
     }
 
     final ok = _draft.pickAgent(agent, team);
-    if (!ok) {
-      _showSnack('Cannot pick this agent (already banned or picked).');
-      return;
-    }
+    if (!ok) return;
 
     if (phase == 1) {
       if (isTeamA) {
         _teamAFirstAgentPicks++;
-        if (_teamAFirstAgentPicks >= 3) {
-          _phase = DraftPhase.agentPick1TeamB;
-        }
+        if (_teamAFirstAgentPicks >= 3) _phase = DraftPhase.agentPick1TeamB;
       } else {
         _teamBFirstAgentPicks++;
-        if (_teamBFirstAgentPicks >= 3) {
-          _phase = DraftPhase.agentBan2TeamA;
-        }
+        if (_teamBFirstAgentPicks >= 3) _phase = DraftPhase.agentBan2TeamA;
       }
     } else {
       if (isTeamA) {
         _teamASecondAgentPicks++;
-        if (_teamASecondAgentPicks >= 2) {
-          _phase = DraftPhase.agentPick2TeamB;
-        }
+        if (_teamASecondAgentPicks >= 2) _phase = DraftPhase.agentPick2TeamB;
       } else {
         _teamBSecondAgentPicks++;
-        if (_teamBSecondAgentPicks >= 2) {
-          _phase = DraftPhase.done;
-        }
+        if (_teamBSecondAgentPicks >= 2) _phase = DraftPhase.done;
       }
     }
 
@@ -361,80 +292,10 @@ class _DraftScreenState extends State<DraftScreen> {
   void _selectFinalMapFromRemaining() {
     final bannedIds = _draft.bannedMaps.map((m) => m.uuid).toSet();
     final remaining = _maps.where((m) => !bannedIds.contains(m.uuid)).toList();
-    if (remaining.isEmpty) {
-      _finalSelectedMap = null;
-      return;
+    if (remaining.isNotEmpty) {
+      remaining.shuffle();
+      _finalSelectedMap = remaining.first;
     }
-    remaining.shuffle();
-    _finalSelectedMap = remaining.first;
-  }
-
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('VALORANT Draft / Ban'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Reset draft',
-            onPressed: () {
-              setState(() {
-                _draft.reset();
-                _phase = DraftPhase.mapBanTeamA;
-                _teamAMapBans = 0;
-                _teamBMapBans = 0;
-                _finalSelectedMap = null;
-                _teamAMapBanList.clear();
-                _teamBMapBanList.clear();
-                _teamAFirstAgentBans = 0;
-                _teamBFirstAgentBans = 0;
-                _teamAFirstAgentPicks = 0;
-                _teamBFirstAgentPicks = 0;
-                _teamASecondAgentBans = 0;
-                _teamBSecondAgentBans = 0;
-                _teamASecondAgentPicks = 0;
-                _teamBSecondAgentPicks = 0;
-                _loadFuture = _loadData();
-              });
-            },
-          ),
-        ],
-      ),
-      body: FutureBuilder<void>(
-        future: _loadFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Error: ${snapshot.error}'),
-            );
-          }
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              children: [
-                _buildPhaseBanner(),
-                const SizedBox(height: 12),
-                _buildMapSection(),
-                const SizedBox(height: 16),
-                _buildAgentSection(),
-                const SizedBox(height: 24),
-              ],
-            ),
-          );
-        },
-      ),
-    );
   }
 
   Widget _buildPhaseBanner() {
@@ -451,41 +312,28 @@ class _DraftScreenState extends State<DraftScreen> {
       end = Colors.teal.shade800;
       icon = Icons.map;
     } else {
-      // Agent phases
       if (_phase == DraftPhase.agentBan1TeamA ||
           _phase == DraftPhase.agentBan1TeamB ||
           _phase == DraftPhase.agentBan2TeamA ||
           _phase == DraftPhase.agentBan2TeamB) {
         start = Colors.redAccent.shade200;
-        end = Colors.red.shade900;
+        end = Colors.red.shade800;
         icon = Icons.block;
       } else {
         start = Colors.blueAccent.shade200;
-        end = Colors.blue.shade900;
+        end = Colors.blue.shade800;
         icon = Icons.person;
       }
     }
 
-    final teamLabel = _phase == DraftPhase.done
-        ? 'Draft Finished'
-        : (_isTeamATurn ? 'Team A Turn' : 'Team B Turn');
+    final teamLabel =
+        _phase == DraftPhase.done ? 'Draft Finished' : (_isTeamATurn ? 'Team A' : 'Team B');
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [start, end],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: LinearGradient(colors: [start, end]),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: end.withOpacity(0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -500,52 +348,71 @@ class _DraftScreenState extends State<DraftScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _phaseTitle,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(_phaseTitle,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(
-                  _phaseSubtitle,
-                  style: const TextStyle(
-                    fontSize: 13,
-                  ),
-                ),
+                Text(_phaseSubtitle, style: const TextStyle(fontSize: 13)),
               ],
             ),
           ),
-          const SizedBox(width: 8),
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.25),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.white24),
+              borderRadius: BorderRadius.circular(99),
             ),
-            child: Text(
-              teamLabel,
-              style: const TextStyle(fontSize: 12),
-            ),
+            child: Text(teamLabel, style: const TextStyle(fontSize: 12)),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildMapBanStrip(List<ValorantMap> maps, Color tint) {
+    if (maps.isEmpty) {
+      return const Text('No bans yet',
+          style: TextStyle(fontSize: 11, color: Colors.grey));
+    }
+    return Wrap(
+      spacing: 4,
+      runSpacing: 4,
+      children: maps.map((m) {
+        final img = m.displayIcon.isNotEmpty ? m.displayIcon : m.splash;
+        return Tooltip(
+          message: m.displayName,
+          child: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: tint.withOpacity(0.8), width: 2),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: img.isNotEmpty
+                  ? Image.network(img, width: 36, height: 36, fit: BoxFit.cover)
+                  : Container(
+                      width: 36,
+                      height: 36,
+                      color: Colors.grey.shade800,
+                      child: const Icon(Icons.map, size: 18),
+                    ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildMapSection() {
-    final mapTitle = _finalSelectedMap != null
-        ? _finalSelectedMap!.displayName
-        : 'Not selected yet';
+    final mapTitle =
+        _finalSelectedMap != null ? _finalSelectedMap!.displayName : 'Not selected';
 
     return Card(
-      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -553,67 +420,136 @@ class _DraftScreenState extends State<DraftScreen> {
               children: [
                 const Icon(Icons.map),
                 const SizedBox(width: 8),
-                const Text(
-                  'Map Draft',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                const Text('Map Draft',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const Spacer(),
-                Chip(
-                  label: Text(
-                    'A bans: $_teamAMapBans / 3',
-                    style: const TextStyle(fontSize: 11),
+                Chip(label: Text('A bans: $_teamAMapBans / 3')),
+                const SizedBox(width: 4),
+                Chip(label: Text('B bans: $_teamBMapBans / 3')),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Team A Bans',
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      _buildMapBanStrip(_teamAMapBanList, Colors.blueAccent),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 4),
-                Chip(
-                  label: Text(
-                    'B bans: $_teamBMapBans / 3',
-                    style: const TextStyle(fontSize: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text('Chosen Map',
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      if (_finalSelectedMap == null)
+                        const Text('Not selected',
+                            style:
+                                TextStyle(fontSize: 11, color: Colors.grey))
+                      else
+                        Column(
+                          children: [
+                            if (_finalSelectedMap!.splash.isNotEmpty)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  _finalSelectedMap!.splash,
+                                  height: 70,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            const SizedBox(height: 4),
+                            Text(mapTitle,
+                                style: const TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text('Team B Bans',
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      _buildMapBanStrip(_teamBMapBanList, Colors.redAccent),
+                    ],
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            const Divider(),
             const SizedBox(height: 8),
-            Text(
-              'Final map: $mapTitle',
-              style: const TextStyle(fontSize: 13, color: Colors.grey),
-            ),
+            const Text('Maps to choose from',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            ListView.builder(
-              itemCount: _maps.length,
+            GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) {
-                final map = _maps[index];
-                final bool isBanned =
-                    _draft.bannedMaps.any((m) => m.uuid == map.uuid);
-                final bool isSelected =
-                    _finalSelectedMap != null && _finalSelectedMap!.uuid == map.uuid;
-
-                return ListTile(
-                  onTap: () => _onMapTap(map),
-                  leading: map.displayIcon.isNotEmpty
-                      ? Image.network(map.displayIcon, width: 40, height: 40)
-                      : const Icon(Icons.map),
-                  title: Text(map.displayName),
-                  subtitle: Text(
-                    isSelected
-                        ? 'Selected map'
-                        : isBanned
-                            ? 'Banned'
-                            : 'Available',
-                  ),
-                  trailing: Icon(
-                    isSelected
-                        ? Icons.star
-                        : isBanned
-                            ? Icons.block
-                            : Icons.circle_outlined,
-                    color: isSelected
-                        ? Colors.amber
-                        : isBanned
-                            ? Colors.redAccent
-                            : Colors.grey,
+              itemCount: _maps.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4, childAspectRatio: .9),
+              itemBuilder: (context, i) {
+                final m = _maps[i];
+                final bannedA =
+                    _teamAMapBanList.any((x) => x.uuid == m.uuid);
+                final bannedB =
+                    _teamBMapBanList.any((x) => x.uuid == m.uuid);
+                final selected =
+                    _finalSelectedMap != null && _finalSelectedMap!.uuid == m.uuid;
+                return GestureDetector(
+                  onTap: () => _onMapTap(m),
+                  child: Stack(
+                    children: [
+                      Card(
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: (m.displayIcon.isNotEmpty
+                                      ? m.displayIcon
+                                      : m.splash)
+                                  .isNotEmpty
+                                  ? Image.network(
+                                      m.displayIcon.isNotEmpty
+                                          ? m.displayIcon
+                                          : m.splash,
+                                      fit: BoxFit.cover)
+                                  : const Icon(Icons.map),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(m.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      if (selected || bannedA || bannedB)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? Colors.amber.withOpacity(0.45)
+                                : bannedA
+                                    ? Colors.blue.withOpacity(0.45)
+                                    : Colors.red.withOpacity(0.45),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                    ],
                   ),
                 );
               },
@@ -624,123 +560,199 @@ class _DraftScreenState extends State<DraftScreen> {
     );
   }
 
+  Widget _buildBannedAgentsRow() {
+    final hasBans =
+        _teamAAgentBans.isNotEmpty || _teamBAgentBans.isNotEmpty;
+
+    if (!hasBans) {
+      return const Text('Banned agents: none yet.',
+          style: TextStyle(fontSize: 11, color: Colors.grey));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Banned Agents by Team',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Team A',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent)),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: _teamAAgentBans
+                        .map((a) => Chip(
+                              shape: StadiumBorder(
+                                side: BorderSide(
+                                    color: Colors.blueAccent.withOpacity(.7)),
+                              ),
+                              avatar: a.iconUrl.isNotEmpty
+                                  ? CircleAvatar(
+                                      backgroundImage:
+                                          NetworkImage(a.iconUrl))
+                                  : const CircleAvatar(
+                                      child:
+                                          Icon(Icons.person, size: 14)),
+                              label: Text(a.displayName,
+                                  style: const TextStyle(fontSize: 11)),
+                            ))
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Team B',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.redAccent)),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: _teamBAgentBans
+                        .map((a) => Chip(
+                              shape: StadiumBorder(
+                                side: BorderSide(
+                                    color: Colors.redAccent.withOpacity(.7)),
+                              ),
+                              avatar: a.iconUrl.isNotEmpty
+                                  ? CircleAvatar(
+                                      backgroundImage:
+                                          NetworkImage(a.iconUrl))
+                                  : const CircleAvatar(
+                                      child:
+                                          Icon(Icons.person, size: 14)),
+                              label: Text(a.displayName,
+                                  style: const TextStyle(fontSize: 11)),
+                            ))
+                        .toList(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildAgentSection() {
     return Card(
-      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: [
-                const Icon(Icons.person),
-                const SizedBox(width: 8),
-                const Text(
-                  'Agent Draft',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+              children: const [
+                Icon(Icons.person),
+                SizedBox(width: 8),
+                Text('Agent Draft',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
-              runSpacing: 4,
               children: [
                 Chip(
-                  label: Text(
-                    'A picks: ${_draft.teamA.pickedAgents.length} / 5',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ),
+                    label: Text(
+                        'A picks: ${_draft.teamA.pickedAgents.length} / 5')),
                 Chip(
-                  label: Text(
-                    'B picks: ${_draft.teamB.pickedAgents.length} / 5',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ),
-                Chip(
-                  label: Text(
-                    'Total bans: ${_draft.bannedAgents.length}',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ),
+                    label: Text(
+                        'B picks: ${_draft.teamB.pickedAgents.length} / 5')),
+                Chip(label: Text('Total bans: ${_draft.bannedAgents.length}')),
               ],
             ),
             const SizedBox(height: 8),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: _buildTeamAgentsColumn(_draft.teamA)),
                 const SizedBox(width: 8),
                 Expanded(child: _buildTeamAgentsColumn(_draft.teamB)),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             _buildBannedAgentsRow(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             GridView.builder(
-              itemCount: _agents.length,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
+              itemCount: _agents.length,
               padding: const EdgeInsets.all(4),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                childAspectRatio: 0.75,
-                crossAxisSpacing: 4,
-                mainAxisSpacing: 4,
-              ),
-              itemBuilder: (context, index) {
-                final agent = _agents[index];
-                final isBanned =
-                    _draft.bannedAgents.any((a) => a.uuid == agent.uuid);
-                final inTeamA =
-                    _draft.teamA.pickedAgents.any((a) => a.uuid == agent.uuid);
-                final inTeamB =
-                    _draft.teamB.pickedAgents.any((a) => a.uuid == agent.uuid);
-                final isUsed = isBanned || inTeamA || inTeamB;
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4, childAspectRatio: .75),
+              itemBuilder: (context, i) {
+                final a = _agents[i];
+
+                final bannedA =
+                    _teamAAgentBans.any((x) => x.uuid == a.uuid);
+                final bannedB =
+                    _teamBAgentBans.any((x) => x.uuid == a.uuid);
+                final inA = _draft.teamA.pickedAgents
+                    .any((x) => x.uuid == a.uuid);
+                final inB = _draft.teamB.pickedAgents
+                    .any((x) => x.uuid == a.uuid);
+
+                final used = bannedA || bannedB || inA || inB;
 
                 return GestureDetector(
-                  onTap: () => _onAgentTap(agent),
+                  onTap: () => _onAgentTap(a),
                   child: Stack(
                     children: [
                       Card(
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Expanded(
-                              child: agent.iconUrl.isNotEmpty
-                                  ? Image.network(agent.iconUrl,
+                              child: a.iconUrl.isNotEmpty
+                                  ? Image.network(a.iconUrl,
                                       fit: BoxFit.contain)
                                   : const Icon(Icons.person),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              agent.displayName,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 11),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                            Text(a.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 11)),
                           ],
                         ),
                       ),
-                      if (isUsed)
+                      if (used)
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.55),
+                            color: bannedA
+                                ? Colors.blue.withOpacity(.55)
+                                : bannedB
+                                    ? Colors.red.withOpacity(.55)
+                                    : Colors.black.withOpacity(.55),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Center(
                             child: Icon(
-                              isBanned
+                              bannedA || bannedB
                                   ? Icons.block
-                                  : inTeamA || inTeamB
-                                      ? Icons.check
-                                      : Icons.help_outline,
-                              color: isBanned
-                                  ? Colors.redAccent
+                                  : Icons.check,
+                              color: bannedA || bannedB
+                                  ? Colors.white
                                   : Colors.greenAccent,
                               size: 24,
                             ),
@@ -759,44 +771,35 @@ class _DraftScreenState extends State<DraftScreen> {
 
   Widget _buildTeamAgentsColumn(TeamDraft team) {
     return Card(
-      color: Colors.white.withOpacity(0.02),
+      color: Colors.white.withOpacity(.02),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              team.name,
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
+            Text(team.name,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             const SizedBox(height: 4),
             if (team.pickedAgents.isEmpty)
-              const Text(
-                'No picks yet.',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              )
-            else
+              const Text('No picks yet.',
+                  style: TextStyle(fontSize: 11, color: Colors.grey)),
+            if (team.pickedAgents.isNotEmpty)
               Wrap(
                 spacing: 4,
                 runSpacing: 4,
                 children: team.pickedAgents
-                    .map(
-                      (a) => Chip(
-                        avatar: a.iconUrl.isNotEmpty
-                            ? CircleAvatar(
-                                backgroundImage: NetworkImage(a.iconUrl),
-                              )
-                            : const CircleAvatar(
-                                child: Icon(Icons.person, size: 14),
-                              ),
-                        label: Text(
-                          a.displayName,
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ),
-                    )
+                    .map((a) => Chip(
+                          avatar: a.iconUrl.isNotEmpty
+                              ? CircleAvatar(
+                                  backgroundImage:
+                                      NetworkImage(a.iconUrl))
+                              : const CircleAvatar(
+                                  child: Icon(Icons.person, size: 14)),
+                          label: Text(a.displayName,
+                              style: const TextStyle(fontSize: 11)),
+                        ))
                     .toList(),
               ),
           ],
@@ -805,39 +808,59 @@ class _DraftScreenState extends State<DraftScreen> {
     );
   }
 
-  Widget _buildBannedAgentsRow() {
-    if (_draft.bannedAgents.isEmpty) {
-      return const Text(
-        'Banned agents: none yet.',
-        style: TextStyle(fontSize: 11, color: Colors.grey),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Banned Agents:',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Wrap(
-          spacing: 4,
-          runSpacing: 4,
-          children: _draft.bannedAgents
-              .map(
-                (a) => Chip(
-                  avatar: a.iconUrl.isNotEmpty
-                      ? CircleAvatar(backgroundImage: NetworkImage(a.iconUrl))
-                      : const CircleAvatar(
-                          child: Icon(Icons.person, size: 14),
-                        ),
-                  label: Text(
-                    a.displayName,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ),
-              )
-              .toList(),
-        ),
-      ],
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('VALORANT Draft / Ban'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              setState(() {
+                _draft.reset();
+                _phase = DraftPhase.mapBanTeamA;
+                _teamAMapBans = 0;
+                _teamBMapBans = 0;
+                _teamAMapBanList.clear();
+                _teamBMapBanList.clear();
+                _teamAAgentBans.clear();
+                _teamBAgentBans.clear();
+                _teamAFirstAgentBans = 0;
+                _teamBFirstAgentBans = 0;
+                _teamAFirstAgentPicks = 0;
+                _teamBFirstAgentPicks = 0;
+                _teamASecondAgentBans = 0;
+                _teamBSecondAgentBans = 0;
+                _teamASecondAgentPicks = 0;
+                _teamBSecondAgentPicks = 0;
+                _finalSelectedMap = null;
+                _loadFuture = _loadData();
+              });
+            },
+          ),
+        ],
+      ),
+      body: FutureBuilder(
+        future: _loadFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              children: [
+                _buildPhaseBanner(),
+                const SizedBox(height: 12),
+                _buildMapSection(),
+                const SizedBox(height: 16),
+                _buildAgentSection(),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
